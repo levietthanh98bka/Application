@@ -57,7 +57,8 @@
 //! [1]
 MainWindow::MainWindow()
     : typeFile (TYPE_FILE::TEXT)
-    , textEdit(new QPlainTextEdit)
+    , textEdit(new CodeEditor)
+    , m_label(new QLabel)
 //! [1] //! [2]
 {
     setCentralWidget(textEdit);
@@ -69,15 +70,16 @@ MainWindow::MainWindow()
 
     connect(textEdit->document(), &QTextDocument::contentsChanged,
             this, &MainWindow::documentWasModified);
+    connect(this,&MainWindow::typeFileChanged, this,&MainWindow::slotTypeFileChanged);
 
-#ifndef QT_NO_SESSIONMANAGER
-    QGuiApplication::setFallbackSessionManagementEnabled(false);
-    connect(qApp, &QGuiApplication::commitDataRequest,
-            this, &MainWindow::commitData);
-#endif
+//#ifndef QT_NO_SESSIONMANAGER
+//    QGuiApplication::setFallbackSessionManagementEnabled(false);
+//    connect(qApp, &QGuiApplication::commitDataRequest,
+//            this, &MainWindow::commitData);
+//#endif
 
     setCurrentFile(QString());
-    setUnifiedTitleAndToolBarOnMac(true);
+//    setUnifiedTitleAndToolBarOnMac(true);
 }
 //! [2]
 
@@ -115,12 +117,21 @@ void MainWindow::open()
         QStringList list = fileName.split('.');
         if(!list.isEmpty()){
             QString temp = list.last();
-            int i = QString::compare(temp, "png", Qt::CaseInsensitive);
-            if(!i)
+
+            [=](QString png){if(!QString::compare(temp, png, Qt::CaseInsensitive)) typeFile = IMAGE; emit typeFileChanged();}("jpg");
+//            [=](QString png){if(!QString::compare(temp, png, Qt::CaseInsensitive)) typeFile = IMAGE; emit typeFileChanged();}("jpg");
+//            [=](QString png){if(!QString::compare(temp, png, Qt::CaseInsensitive)) typeFile = IMAGE; emit typeFileChanged();}("jpeg");
         }
 
-        if (!fileName.isEmpty())
+        if (!fileName.isEmpty() && typeFile == TEXT){
             loadFileText(fileName);
+            return;
+        }
+        if (!fileName.isEmpty() && typeFile == IMAGE){
+            qDebug() << "thanhlv23";
+            loadImage(fileName);
+            return;
+        }
     }
 }
 //! [8]
@@ -132,7 +143,7 @@ bool MainWindow::save()
     if (curFile.isEmpty()) {
         return saveAs();
     } else {
-        return saveFile(curFile);
+        return saveFileText(curFile);
     }
 }
 //! [10]
@@ -146,7 +157,7 @@ bool MainWindow::saveAs()
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     if (dialog.exec() != QDialog::Accepted)
         return false;
-    return saveFile(dialog.selectedFiles().first());
+    return saveFileText(dialog.selectedFiles().first());
 }
 //! [12]
 
@@ -340,6 +351,10 @@ bool MainWindow::maybeSave()
 void MainWindow::loadFileText(const QString &fileName)
 //! [42] //! [43]
 {
+    if(textEdit != nullptr){
+        textEdit = new CodeEditor;
+    }
+    setCentralWidget(textEdit);
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("Application"),
@@ -349,21 +364,36 @@ void MainWindow::loadFileText(const QString &fileName)
     }
 
     QTextStream in(&file);
-#ifndef QT_NO_CURSOR
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-#endif
+//#ifndef QT_NO_CURSOR
+//    QApplication::setOverrideCursor(Qt::WaitCursor);
+//#endif
     textEdit->setPlainText(in.readAll());
-#ifndef QT_NO_CURSOR
-    QApplication::restoreOverrideCursor();
-#endif
+//#ifndef QT_NO_CURSOR
+//    QApplication::restoreOverrideCursor();
+//#endif
 
     setCurrentFile(fileName);
+    statusBar()->showMessage(tr("File loaded"), 2000);
+}
+
+void MainWindow::loadImage(const QString &fileName)
+{
+    if(scrollArea != nullptr)
+        scrollArea = new QScrollArea;
+    QImage image;
+    image.load(fileName);
+    if(m_label != nullptr)
+        m_label = new QLabel;
+    m_label->setPixmap(QPixmap::fromImage(image));
+    scrollArea->setWidget(m_label);
+    setCentralWidget(scrollArea);
+
     statusBar()->showMessage(tr("File loaded"), 2000);
 }
 //! [43]
 
 //! [44]
-bool MainWindow::saveFile(const QString &fileName)
+bool MainWindow::saveFileText(const QString &fileName)
 //! [44] //! [45]
 {
     QFile file(fileName);
@@ -412,10 +442,6 @@ QString MainWindow::strippedName(const QString &fullFileName)
     return QFileInfo(fullFileName).fileName();
 }
 
-void MainWindow::getTypeFile(QString str)
-{
-    int i = QString::compare(str, "png", Qt::CaseInsensitive);
-}
 //! [49]
 #ifndef QT_NO_SESSIONMANAGER
 void MainWindow::commitData(QSessionManager &manager)
@@ -427,6 +453,14 @@ void MainWindow::commitData(QSessionManager &manager)
         // Non-interactive: save without asking
         if (textEdit->document()->isModified())
             save();
+    }
+}
+
+void MainWindow::slotTypeFileChanged()
+{
+    if(typeFile != TEXT && textEdit != nullptr){
+        delete textEdit;
+        textEdit = nullptr;
     }
 }
 #endif

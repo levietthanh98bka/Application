@@ -48,74 +48,68 @@
 **
 ****************************************************************************/
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef CODEEDITOR_H
+#define CODEEDITOR_H
 
-#include <QMainWindow>
-#include <QImage>
-#include <QScrollArea>
-#include <QLabel>
-#include <QDebug>
-#include <codeeditor.h>
+#include <QPlainTextEdit>
+#include <QObject>
 
 QT_BEGIN_NAMESPACE
-class QAction;
-class QMenu;
-class QPlainTextEdit;
-class QSessionManager;
+class QPaintEvent;
+class QResizeEvent;
+class QSize;
+class QWidget;
 QT_END_NAMESPACE
 
-//! [0]
-class MainWindow : public QMainWindow
+class LineNumberArea;
+
+//![codeeditordefinition]
+
+class CodeEditor : public QPlainTextEdit
 {
     Q_OBJECT
 
 public:
-    MainWindow();
+    CodeEditor(QWidget *parent = 0);
 
-    void loadFileText(const QString &fileName);
-    void loadImage(const QString &fileName);
-    enum TYPE_FILE {
-        IMAGE,
-        MUSIC,
-        VIDEO,
-        TEXT
-    };
-signals:
-    void typeFileChanged();
+    void lineNumberAreaPaintEvent(QPaintEvent *event);
+    int lineNumberAreaWidth();
+
 protected:
-    void closeEvent(QCloseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
-    void newFile();
-    void open();
-    bool save();
-    bool saveAs();
-    void about();
-    void documentWasModified();
-#ifndef QT_NO_SESSIONMANAGER
-    void commitData(QSessionManager &);
-#endif
-    void slotTypeFileChanged();
+    void updateLineNumberAreaWidth(int newBlockCount);
+    void highlightCurrentLine();
+    void updateLineNumberArea(const QRect &, int);
 
 private:
-    void createActions();
-    void createStatusBar();
-    void readSettings();
-    void writeSettings();
-    bool maybeSave();
-    bool saveFileText(const QString &fileName);
-    void setCurrentFile(const QString &fileName);
-    QString strippedName(const QString &fullFileName);
-    void getTypeFile(QString str);
-
-    TYPE_FILE typeFile;
-
-    CodeEditor *textEdit;
-    QString curFile;
-    QLabel *m_label;
-    QScrollArea* scrollArea;
+    QWidget *lineNumberArea;
 };
-//! [0]
+
+//![codeeditordefinition]
+//![extraarea]
+
+class LineNumberArea : public QWidget
+{
+public:
+    LineNumberArea(CodeEditor *editor) : QWidget(editor) {
+        codeEditor = editor;
+    }
+
+    QSize sizeHint() const override {
+        return QSize(codeEditor->lineNumberAreaWidth(), 0);
+    }
+
+protected:
+    void paintEvent(QPaintEvent *event) override {
+        codeEditor->lineNumberAreaPaintEvent(event);
+    }
+
+private:
+    CodeEditor *codeEditor;
+};
+
+//![extraarea]
 
 #endif

@@ -1,9 +1,11 @@
 QT += widgets
 requires(qtConfig(filedialog))
 
-HEADERS       = mainwindow.h
+HEADERS       = mainwindow.h \
+    codeeditor.h
 SOURCES       = main.cpp \
-                mainwindow.cpp
+                mainwindow.cpp \
+    codeeditor.cpp
 #! [0]
 RESOURCES     = application.qrc
 #! [0]
