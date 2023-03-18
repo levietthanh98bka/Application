@@ -56,19 +56,21 @@
 
 //! [1]
 MainWindow::MainWindow()
-    : typeFile (TYPE_FILE::TEXT)
-    , textEdit(new CodeEditor)
+    : m_typeFile (TYPE_FILE::TEXT)
+    , m_textEdit(new CodeEditor)
     , m_label(new QLabel)
+    , fileToolBar(new QToolBar)
+    , editToolBar(new QToolBar)
 //! [1] //! [2]
 {
-    setCentralWidget(textEdit);
+    setCentralWidget(m_textEdit);
 
     createActions();
     createStatusBar();
 
     readSettings();
 
-    connect(textEdit->document(), &QTextDocument::contentsChanged,
+    connect(m_textEdit->document(), &QTextDocument::contentsChanged,
             this, &MainWindow::documentWasModified);
     connect(this,&MainWindow::typeFileChanged, this,&MainWindow::slotTypeFileChanged);
 
@@ -100,8 +102,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::newFile()
 //! [5] //! [6]
 {
+    m_typeFile = TEXT;
+    emit typeFileChanged();
     if (maybeSave()) {
-        textEdit->clear();
+        m_textEdit->clear();
         setCurrentFile(QString());
     }
 }
@@ -112,23 +116,42 @@ void MainWindow::newFile()
 void MainWindow::open()
 //! [7] //! [8]
 {
+    QFileDialog dialog;
+    const QStringList picturesLocations = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation);
+    dialog.setDirectory(picturesLocations.isEmpty() ? QDir::currentPath() : picturesLocations.last());
     if (maybeSave()) {
-        QString fileName = QFileDialog::getOpenFileName(this);
+        QString fileName = dialog.getOpenFileName(this);
         QStringList list = fileName.split('.');
         if(!list.isEmpty()){
             QString temp = list.last();
-
-            [=](QString png){if(!QString::compare(temp, png, Qt::CaseInsensitive)) typeFile = IMAGE; emit typeFileChanged();}("jpg");
-//            [=](QString png){if(!QString::compare(temp, png, Qt::CaseInsensitive)) typeFile = IMAGE; emit typeFileChanged();}("jpg");
-//            [=](QString png){if(!QString::compare(temp, png, Qt::CaseInsensitive)) typeFile = IMAGE; emit typeFileChanged();}("jpeg");
+            QStringList listType = {"png","jpg","jpeg","mp3","mp4"};
+            int idx = listType.indexOf(temp.toLower());
+            switch (idx) {
+            case 0:
+            case 1:
+            case 2:
+                m_typeFile = IMAGE;
+                break;
+            case 3:
+                m_typeFile = IMAGE;
+                break;
+            case 4:
+                m_typeFile = IMAGE;
+                break;
+            default:
+                m_typeFile = TEXT;
+                break;
+            }
+            emit typeFileChanged();
         }
 
-        if (!fileName.isEmpty() && typeFile == TEXT){
+        if (!fileName.isEmpty() && m_typeFile == TEXT){
+            LOG_INFO << "load text";
             loadFileText(fileName);
             return;
         }
-        if (!fileName.isEmpty() && typeFile == IMAGE){
-            qDebug() << "thanhlv23";
+        if (!fileName.isEmpty() && m_typeFile == IMAGE){
+            LOG_INFO << "load image";
             loadImage(fileName);
             return;
         }
@@ -140,10 +163,10 @@ void MainWindow::open()
 bool MainWindow::save()
 //! [9] //! [10]
 {
-    if (curFile.isEmpty()) {
+    if (m_curFile.isEmpty()) {
         return saveAs();
     } else {
-        return saveFileText(curFile);
+        return saveFileText(m_curFile);
     }
 }
 //! [10]
@@ -176,7 +199,7 @@ void MainWindow::about()
 void MainWindow::documentWasModified()
 //! [15] //! [16]
 {
-    setWindowModified(textEdit->document()->isModified());
+    setWindowModified(m_textEdit->document()->isModified());
 }
 //! [16]
 
@@ -186,7 +209,7 @@ void MainWindow::createActions()
 {
 
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    QToolBar *fileToolBar = addToolBar(tr("File"));
+    fileToolBar = addToolBar(tr("File"));
     const QIcon newIcon = QIcon::fromTheme("document-new", QIcon(":/images/new.png"));
     QAction *newAct = new QAction(newIcon, tr("&New"), this);
     newAct->setShortcuts(QKeySequence::New);
@@ -230,7 +253,7 @@ void MainWindow::createActions()
 
 //! [21]
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
-    QToolBar *editToolBar = addToolBar(tr("Edit"));
+    editToolBar = addToolBar(tr("Edit"));
 //!
 #ifndef QT_NO_CLIPBOARD
     const QIcon cutIcon = QIcon::fromTheme("edit-cut", QIcon(":/images/cut.png"));
@@ -239,7 +262,7 @@ void MainWindow::createActions()
     cutAct->setShortcuts(QKeySequence::Cut);
     cutAct->setStatusTip(tr("Cut the current selection's contents to the "
                             "clipboard"));
-    connect(cutAct, &QAction::triggered, textEdit, &QPlainTextEdit::cut);
+    connect(cutAct, &QAction::triggered, m_textEdit, &QPlainTextEdit::cut);
     editMenu->addAction(cutAct);
     editToolBar->addAction(cutAct);
 
@@ -248,7 +271,7 @@ void MainWindow::createActions()
     copyAct->setShortcuts(QKeySequence::Copy);
     copyAct->setStatusTip(tr("Copy the current selection's contents to the "
                              "clipboard"));
-    connect(copyAct, &QAction::triggered, textEdit, &QPlainTextEdit::copy);
+    connect(copyAct, &QAction::triggered, m_textEdit, &QPlainTextEdit::copy);
     editMenu->addAction(copyAct);
     editToolBar->addAction(copyAct);
 
@@ -257,7 +280,7 @@ void MainWindow::createActions()
     pasteAct->setShortcuts(QKeySequence::Paste);
     pasteAct->setStatusTip(tr("Paste the clipboard's contents into the current "
                               "selection"));
-    connect(pasteAct, &QAction::triggered, textEdit, &QPlainTextEdit::paste);
+    connect(pasteAct, &QAction::triggered, m_textEdit, &QPlainTextEdit::paste);
     editMenu->addAction(pasteAct);
     editToolBar->addAction(pasteAct);
 
@@ -280,8 +303,8 @@ void MainWindow::createActions()
     cutAct->setEnabled(false);
 //! [23] //! [24]
     copyAct->setEnabled(false);
-    connect(textEdit, &QPlainTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
-    connect(textEdit, &QPlainTextEdit::copyAvailable, copyAct, &QAction::setEnabled);
+    connect(m_textEdit, &QPlainTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
+    connect(m_textEdit, &QPlainTextEdit::copyAvailable, copyAct, &QAction::setEnabled);
 #endif // !QT_NO_CLIPBOARD
 }
 //! [24]
@@ -324,8 +347,8 @@ void MainWindow::writeSettings()
 bool MainWindow::maybeSave()
 //! [40] //! [41]
 {
-    if(typeFile == TEXT){
-        if (!textEdit->document()->isModified())
+    if(m_typeFile == TEXT){
+        if (!m_textEdit->document()->isModified())
             return true;
         const QMessageBox::StandardButton ret
             = QMessageBox::warning(this, tr("Application"),
@@ -351,10 +374,8 @@ bool MainWindow::maybeSave()
 void MainWindow::loadFileText(const QString &fileName)
 //! [42] //! [43]
 {
-    if(textEdit != nullptr){
-        textEdit = new CodeEditor;
-    }
-    setCentralWidget(textEdit);
+    LOG_INFO;
+
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         QMessageBox::warning(this, tr("Application"),
@@ -367,7 +388,7 @@ void MainWindow::loadFileText(const QString &fileName)
 //#ifndef QT_NO_CURSOR
 //    QApplication::setOverrideCursor(Qt::WaitCursor);
 //#endif
-    textEdit->setPlainText(in.readAll());
+    m_textEdit->setPlainText(in.readAll());
 //#ifndef QT_NO_CURSOR
 //    QApplication::restoreOverrideCursor();
 //#endif
@@ -378,15 +399,15 @@ void MainWindow::loadFileText(const QString &fileName)
 
 void MainWindow::loadImage(const QString &fileName)
 {
-    if(scrollArea != nullptr)
-        scrollArea = new QScrollArea;
-    QImage image;
-    image.load(fileName);
+    LOG_INFO;
+    if(m_scrollArea != nullptr)
+        m_scrollArea = new QScrollArea;
+    m_image.load(fileName);
     if(m_label != nullptr)
         m_label = new QLabel;
-    m_label->setPixmap(QPixmap::fromImage(image));
-    scrollArea->setWidget(m_label);
-    setCentralWidget(scrollArea);
+    m_label->setPixmap(QPixmap::fromImage(m_image));
+    m_scrollArea->setWidget(m_label);
+    setCentralWidget(m_scrollArea);
 
     statusBar()->showMessage(tr("File loaded"), 2000);
 }
@@ -409,7 +430,7 @@ bool MainWindow::saveFileText(const QString &fileName)
 #ifndef QT_NO_CURSOR
     QApplication::setOverrideCursor(Qt::WaitCursor);
 #endif
-    out << textEdit->toPlainText();
+    out << m_textEdit->toPlainText();
 #ifndef QT_NO_CURSOR
     QApplication::restoreOverrideCursor();
 #endif
@@ -424,12 +445,12 @@ bool MainWindow::saveFileText(const QString &fileName)
 void MainWindow::setCurrentFile(const QString &fileName)
 //! [46] //! [47]
 {
-    curFile = fileName;
-    textEdit->document()->setModified(false);
+    m_curFile = fileName;
+    m_textEdit->document()->setModified(false);
     setWindowModified(false);
 
-    QString shownName = curFile;
-    if (curFile.isEmpty())
+    QString shownName = m_curFile;
+    if (m_curFile.isEmpty())
         shownName = "untitled.txt";
     setWindowFilePath(shownName);
 }
@@ -451,16 +472,28 @@ void MainWindow::commitData(QSessionManager &manager)
             manager.cancel();
     } else {
         // Non-interactive: save without asking
-        if (textEdit->document()->isModified())
+        if (m_textEdit->document()->isModified())
             save();
     }
 }
 
 void MainWindow::slotTypeFileChanged()
-{
-    if(typeFile != TEXT && textEdit != nullptr){
-        delete textEdit;
-        textEdit = nullptr;
+{  
+    if(m_typeFile != TEXT){
+        fileToolBar->setVisible(false);
+        editToolBar->setVisible(false);
+        if(m_textEdit != nullptr){
+            delete m_textEdit;
+            m_textEdit = nullptr;
+        }
+    } else {
+        fileToolBar->setVisible(true);
+        editToolBar->setVisible(true);
+        if(m_textEdit == nullptr){
+            m_textEdit = new CodeEditor;
+        }
+        setCentralWidget(m_textEdit);
     }
+
 }
 #endif

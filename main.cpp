@@ -75,5 +75,6 @@ int main(int argc, char *argv[])
         mainWin.loadFileText(parser.positionalArguments().first());
     mainWin.show();
     return app.exec();
+
 }
 //! [0]

@@ -56,7 +56,10 @@
 #include <QScrollArea>
 #include <QLabel>
 #include <QDebug>
+#include <QRegExp>
 #include <codeeditor.h>
+#include <loghelper.h>
+#include <QStandardPaths>
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -109,12 +112,15 @@ private:
     QString strippedName(const QString &fullFileName);
     void getTypeFile(QString str);
 
-    TYPE_FILE typeFile;
+    TYPE_FILE m_typeFile;
 
-    CodeEditor *textEdit;
-    QString curFile;
+    CodeEditor *m_textEdit;
+    QImage m_image;
+    QString m_curFile;
     QLabel *m_label;
-    QScrollArea* scrollArea;
+    QScrollArea* m_scrollArea;
+    QToolBar *fileToolBar;
+    QToolBar *editToolBar;
 };
 //! [0]
 

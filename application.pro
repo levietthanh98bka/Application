@@ -2,7 +2,8 @@ QT += widgets
 requires(qtConfig(filedialog))
 
 HEADERS       = mainwindow.h \
-    codeeditor.h
+    codeeditor.h \
+    loghelper.h
 SOURCES       = main.cpp \
                 mainwindow.cpp \
     codeeditor.cpp
