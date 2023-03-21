@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2017 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the examples of the Qt Toolkit.
@@ -48,46 +48,24 @@
 **
 ****************************************************************************/
 
-//! [0]
-#include <QApplication>
-#include <QCommandLineParser>
-#include <QCommandLineOption>
+#ifndef VIDEOWIDGET_H
+#define VIDEOWIDGET_H
 
+#include <QVideoWidget>
 
-#include "mainwindow.h"
-
-int main(int argc, char *argv[])
+class VideoWidget : public QVideoWidget
 {
-    Q_INIT_RESOURCE(application);
+    Q_OBJECT
 
+public:
+    explicit VideoWidget(QWidget *parent = nullptr);
+signals:
+    void modeViewChanged();
 
-    QApplication app(argc, argv);
-    QCoreApplication::setOrganizationName("QtProject");
-    QCoreApplication::setApplicationName("Application Example");
-    QCoreApplication::setApplicationVersion(QT_VERSION_STR);
-    QCommandLineParser parser;
-    parser.setApplicationDescription(QCoreApplication::applicationName());
-    parser.addHelpOption();
-    parser.addVersionOption();
-    parser.addPositionalArgument("file", "The file to open.");
-    parser.process(app);
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+};
 
-//    QMediaPlayer *player = new QMediaPlayer;
-//    QVideoWidget *video = new QVideoWidget;
-//    player->setVideoOutput(video);
-//    player->setMedia(QUrl::fromLocalFile("/mnt/hgfs/Video/Music/34567890.mp4"));
-//    video->setGeometry(100,100,300,400);
-//    video->show();
-//    player->play();
-
-
-
-
-    MainWindow mainWin;
-    if (!parser.positionalArguments().isEmpty())
-        mainWin.loadFileText(parser.positionalArguments().first());
-    mainWin.show();
-    return app.exec();
-
-}
-//! [0]
+#endif // VIDEOWIDGET_H

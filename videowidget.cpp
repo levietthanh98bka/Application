@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2017 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the examples of the Qt Toolkit.
@@ -48,46 +48,47 @@
 **
 ****************************************************************************/
 
-//! [0]
-#include <QApplication>
-#include <QCommandLineParser>
-#include <QCommandLineOption>
+#include "videowidget.h"
 
+#include <QKeyEvent>
+#include <QMouseEvent>
 
-#include "mainwindow.h"
-
-int main(int argc, char *argv[])
+VideoWidget::VideoWidget(QWidget *parent)
+    : QVideoWidget(parent)
 {
-    Q_INIT_RESOURCE(application);
+//    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 
+//    QPalette p = palette();
+//    p.setColor(QPalette::Window, Qt::black);
+//    setPalette(p);
 
-    QApplication app(argc, argv);
-    QCoreApplication::setOrganizationName("QtProject");
-    QCoreApplication::setApplicationName("Application Example");
-    QCoreApplication::setApplicationVersion(QT_VERSION_STR);
-    QCommandLineParser parser;
-    parser.setApplicationDescription(QCoreApplication::applicationName());
-    parser.addHelpOption();
-    parser.addVersionOption();
-    parser.addPositionalArgument("file", "The file to open.");
-    parser.process(app);
+//    setAttribute(Qt::WA_OpaquePaintEvent);
+}
 
-//    QMediaPlayer *player = new QMediaPlayer;
-//    QVideoWidget *video = new QVideoWidget;
-//    player->setVideoOutput(video);
-//    player->setMedia(QUrl::fromLocalFile("/mnt/hgfs/Video/Music/34567890.mp4"));
-//    video->setGeometry(100,100,300,400);
-//    video->show();
-//    player->play();
+void VideoWidget::keyPressEvent(QKeyEvent *event)
+{
+//    if (event->key() == Qt::Key_Escape && isFullScreen()) {
+//        setFullScreen(false);
+//        event->accept();
+//    } else if (event->key() == Qt::Key_Enter && event->modifiers() & Qt::Key_Alt) {
+//        setFullScreen(!isFullScreen());
+//        event->accept();
+//    } else {
+//        QVideoWidget::keyPressEvent(event);
+//    }
+}
 
-
-
-
-    MainWindow mainWin;
-    if (!parser.positionalArguments().isEmpty())
-        mainWin.loadFileText(parser.positionalArguments().first());
-    mainWin.show();
-    return app.exec();
+void VideoWidget::mouseDoubleClickEvent(QMouseEvent *event)
+{
+//    showNormal();
+//    setFullScreen(!isFullScreen());
+//    event->accept();
+    emit modeViewChanged();
 
 }
-//! [0]
+
+void VideoWidget::mousePressEvent(QMouseEvent *event)
+{
+//    QVideoWidget::mousePressEvent(event);
+}
+

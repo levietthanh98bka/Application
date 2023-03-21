@@ -61,8 +61,12 @@ MainWindow::MainWindow()
     , m_label(new QLabel)
     , fileToolBar(new QToolBar)
     , editToolBar(new QToolBar)
+    , scaleFactor(1)
+    , player(new PlayMedia(this))
 //! [1] //! [2]
 {
+    m_label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    m_label->setScaledContents(true);
     setCentralWidget(m_textEdit);
 
     createActions();
@@ -70,8 +74,7 @@ MainWindow::MainWindow()
 
     readSettings();
 
-    connect(m_textEdit->document(), &QTextDocument::contentsChanged,
-            this, &MainWindow::documentWasModified);
+    connect(m_textEdit->document(), &QTextDocument::contentsChanged,this, &MainWindow::documentWasModified);
     connect(this,&MainWindow::typeFileChanged, this,&MainWindow::slotTypeFileChanged);
 
 //#ifndef QT_NO_SESSIONMANAGER
@@ -82,6 +85,9 @@ MainWindow::MainWindow()
 
     setCurrentFile(QString());
 //    setUnifiedTitleAndToolBarOnMac(true);
+
+    connect(player->m_videoWidget,&VideoWidget::modeViewChanged, this, &MainWindow::slotModeViewChanged);
+    connect(player->m_fullScreenButton, &QPushButton::clicked, this, &MainWindow::showFull);
 }
 //! [2]
 
@@ -95,6 +101,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
     } else {
         event->ignore();
     }
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    if(m_typeFile == IMAGE)
+         LOG_INFO << m_label->size() << m_scrollArea->size() << m_image.size();
+    QWidget::resizeEvent(event);
+
 }
 //! [4]
 
@@ -136,7 +150,7 @@ void MainWindow::open()
                 m_typeFile = IMAGE;
                 break;
             case 4:
-                m_typeFile = IMAGE;
+                m_typeFile = VIDEO;
                 break;
             default:
                 m_typeFile = TEXT;
@@ -153,6 +167,11 @@ void MainWindow::open()
         if (!fileName.isEmpty() && m_typeFile == IMAGE){
             LOG_INFO << "load image";
             loadImage(fileName);
+            return;
+        }
+        if (!fileName.isEmpty() && m_typeFile == VIDEO){
+            LOG_INFO << "load video";
+            loadVideo(fileName);
             return;
         }
     }
@@ -181,6 +200,35 @@ bool MainWindow::saveAs()
     if (dialog.exec() != QDialog::Accepted)
         return false;
     return saveFileText(dialog.selectedFiles().first());
+}
+
+void MainWindow::zoomIn()
+{
+    LOG_INFO;
+    scaleImage(1.25);
+}
+
+void MainWindow::zoomOut()
+{
+    LOG_INFO;
+    scaleImage(0.8);
+}
+
+void MainWindow::normalSize()
+{
+    LOG_INFO;
+    m_label->adjustSize();
+    scaleFactor = 1.0;
+}
+
+void MainWindow::fitToWindow()
+{
+    LOG_INFO;
+    bool fitToWindow = fitToWindowAct->isChecked();
+    m_scrollArea->setWidgetResizable(fitToWindow);
+    if (!fitToWindow)
+        normalSize();
+    updateActions();
 }
 //! [12]
 
@@ -229,7 +277,7 @@ void MainWindow::createActions()
 //! [18] //! [19]
 
     const QIcon saveIcon = QIcon::fromTheme("document-save", QIcon(":/images/save.png"));
-    QAction *saveAct = new QAction(saveIcon, tr("&Save"), this);
+    saveAct = new QAction(saveIcon, tr("&Save"), this);
     saveAct->setShortcuts(QKeySequence::Save);
     saveAct->setStatusTip(tr("Save the document to disk"));
     connect(saveAct, &QAction::triggered, this, &MainWindow::save);
@@ -237,7 +285,7 @@ void MainWindow::createActions()
     fileToolBar->addAction(saveAct);
 
     const QIcon saveAsIcon = QIcon::fromTheme("document-save-as");
-    QAction *saveAsAct = fileMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
+    saveAsAct = fileMenu->addAction(saveAsIcon, tr("Save &As..."), this, &MainWindow::saveAs);
     saveAsAct->setShortcuts(QKeySequence::SaveAs);
     saveAsAct->setStatusTip(tr("Save the document under a new name"));
 
@@ -276,7 +324,7 @@ void MainWindow::createActions()
     editToolBar->addAction(copyAct);
 
     const QIcon pasteIcon = QIcon::fromTheme("edit-paste", QIcon(":/images/paste.png"));
-    QAction *pasteAct = new QAction(pasteIcon, tr("&Paste"), this);
+    pasteAct = new QAction(pasteIcon, tr("&Paste"), this);
     pasteAct->setShortcuts(QKeySequence::Paste);
     pasteAct->setStatusTip(tr("Paste the clipboard's contents into the current "
                               "selection"));
@@ -287,6 +335,28 @@ void MainWindow::createActions()
     menuBar()->addSeparator();
 
 #endif // !QT_NO_CLIPBOARD
+
+    QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
+
+    zoomInAct = viewMenu->addAction(tr("Zoom &In (25%)"), this, &MainWindow::zoomIn);
+    zoomInAct->setShortcut(QKeySequence::ZoomIn);
+    zoomInAct->setEnabled(false);
+
+    zoomOutAct = viewMenu->addAction(tr("Zoom &Out (25%)"), this, &MainWindow::zoomOut);
+    zoomOutAct->setShortcut(QKeySequence::ZoomOut);
+    zoomOutAct->setEnabled(false);
+
+    normalSizeAct = viewMenu->addAction(tr("&Normal Size"), this, &MainWindow::normalSize);
+    normalSizeAct->setShortcut(tr("Ctrl+S"));
+    normalSizeAct->setEnabled(false);
+
+    viewMenu->addSeparator();
+
+    fitToWindowAct = viewMenu->addAction(tr("&Fit to Window"), this, &MainWindow::fitToWindow);
+    fitToWindowAct->setEnabled(false);
+    fitToWindowAct->setCheckable(true);
+    fitToWindowAct->setShortcut(tr("Ctrl+F"));
+    //-----------------------------------------------------------------------------
 
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
     QAction *aboutAct = helpMenu->addAction(tr("&About"), this, &MainWindow::about);
@@ -314,6 +384,7 @@ void MainWindow::createStatusBar()
 //! [32] //! [33]
 {
     statusBar()->showMessage(tr("Ready"));
+
 }
 //! [33]
 
@@ -400,16 +471,48 @@ void MainWindow::loadFileText(const QString &fileName)
 void MainWindow::loadImage(const QString &fileName)
 {
     LOG_INFO;
+//    QImageReader reader(fileName);
+//        reader.setAutoTransform(true);
+//        const QImage newImage = reader.read();
+//        if (newImage.isNull()) {
+//            QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
+//                                     tr("Cannot load %1: %2")
+//                                     .arg(QDir::toNativeSeparators(fileName), reader.errorString()));
+//            return;
+//        }
+    scaleFactor = 1.0;
     if(m_scrollArea != nullptr)
         m_scrollArea = new QScrollArea;
+//    m_image = newImage;
     m_image.load(fileName);
-    if(m_label != nullptr)
+    if(m_label != nullptr){
         m_label = new QLabel;
+        m_label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+        m_label->setScaledContents(true);
+    }
     m_label->setPixmap(QPixmap::fromImage(m_image));
     m_scrollArea->setWidget(m_label);
     setCentralWidget(m_scrollArea);
 
+    m_scrollArea->setVisible(true);
+//    printAct->setEnabled(true);
+    fitToWindowAct->setEnabled(true);
+    updateActions();
+
+    if (!fitToWindowAct->isChecked())
+        m_label->adjustSize();
+
+    setCurrentFile(fileName);
     statusBar()->showMessage(tr("File loaded"), 2000);
+}
+
+void MainWindow::loadVideo(const QString &fileName)
+{
+    LOG_INFO << fileName;
+    player->setVideo(fileName);
+    LOG_INFO << "fileName";
+     setCentralWidget(player);
+
 }
 //! [43]
 
@@ -446,7 +549,8 @@ void MainWindow::setCurrentFile(const QString &fileName)
 //! [46] //! [47]
 {
     m_curFile = fileName;
-    m_textEdit->document()->setModified(false);
+    if(m_typeFile == TEXT && m_textEdit != nullptr)
+        m_textEdit->document()->setModified(false);
     setWindowModified(false);
 
     QString shownName = m_curFile;
@@ -461,6 +565,33 @@ QString MainWindow::strippedName(const QString &fullFileName)
 //! [48] //! [49]
 {
     return QFileInfo(fullFileName).fileName();
+}
+
+void MainWindow::updateActions()
+{
+    LOG_INFO;
+    zoomInAct->setEnabled(!fitToWindowAct->isChecked());
+    zoomOutAct->setEnabled(!fitToWindowAct->isChecked());
+    normalSizeAct->setEnabled(!fitToWindowAct->isChecked());
+}
+
+void MainWindow::scaleImage(double factor)
+{
+    Q_ASSERT(m_label->pixmap());
+    scaleFactor *= factor;
+    m_label->resize(scaleFactor * m_label->pixmap()->size());
+
+    adjustScrollBar(m_scrollArea->horizontalScrollBar(), factor);
+    adjustScrollBar(m_scrollArea->verticalScrollBar(), factor);
+
+    zoomInAct->setEnabled(scaleFactor < 3.0);
+    zoomOutAct->setEnabled(scaleFactor > 0.3);
+}
+
+void MainWindow::adjustScrollBar(QScrollBar *scrollBar, double factor)
+{
+    scrollBar->setValue(int(factor * scrollBar->value()
+                            + ((factor - 1) * scrollBar->pageStep()/2)));
 }
 
 //! [49]
@@ -479,21 +610,28 @@ void MainWindow::commitData(QSessionManager &manager)
 
 void MainWindow::slotTypeFileChanged()
 {  
-    if(m_typeFile != TEXT){
-        fileToolBar->setVisible(false);
-        editToolBar->setVisible(false);
-        if(m_textEdit != nullptr){
-            delete m_textEdit;
-            m_textEdit = nullptr;
-        }
-    } else {
+    if(m_typeFile == TEXT){
         fileToolBar->setVisible(true);
         editToolBar->setVisible(true);
+        saveAct->setEnabled(true);
+        saveAsAct->setEnabled(true);
+        pasteAct->setEnabled(true);
         if(m_textEdit == nullptr){
             m_textEdit = new CodeEditor;
         }
         setCentralWidget(m_textEdit);
+    } else {
+        fileToolBar->setVisible(false);
+        editToolBar->setVisible(false);
+        saveAct->setEnabled(false);
+        saveAsAct->setEnabled(false);
+        pasteAct->setEnabled(false);
+        if(m_textEdit != nullptr){
+            delete m_textEdit;
+            m_textEdit = nullptr;
+        }
     }
 
 }
+
 #endif

@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 The Qt Company Ltd.
+** Copyright (C) 2017 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the examples of the Qt Toolkit.
@@ -48,46 +48,62 @@
 **
 ****************************************************************************/
 
-//! [0]
-#include <QApplication>
-#include <QCommandLineParser>
-#include <QCommandLineOption>
+#ifndef PLAYERCONTROLS_H
+#define PLAYERCONTROLS_H
 
+#include <QMediaPlayer>
+#include <QWidget>
 
-#include "mainwindow.h"
+QT_BEGIN_NAMESPACE
+class QAbstractButton;
+class QAbstractSlider;
+class QComboBox;
+QT_END_NAMESPACE
 
-int main(int argc, char *argv[])
+class PlayerControls : public QWidget
 {
-    Q_INIT_RESOURCE(application);
+    Q_OBJECT
 
+public:
+    explicit PlayerControls(QWidget *parent = nullptr);
 
-    QApplication app(argc, argv);
-    QCoreApplication::setOrganizationName("QtProject");
-    QCoreApplication::setApplicationName("Application Example");
-    QCoreApplication::setApplicationVersion(QT_VERSION_STR);
-    QCommandLineParser parser;
-    parser.setApplicationDescription(QCoreApplication::applicationName());
-    parser.addHelpOption();
-    parser.addVersionOption();
-    parser.addPositionalArgument("file", "The file to open.");
-    parser.process(app);
+    QMediaPlayer::State state() const;
+    int volume() const;
+    bool isMuted() const;
+    qreal playbackRate() const;
 
-//    QMediaPlayer *player = new QMediaPlayer;
-//    QVideoWidget *video = new QVideoWidget;
-//    player->setVideoOutput(video);
-//    player->setMedia(QUrl::fromLocalFile("/mnt/hgfs/Video/Music/34567890.mp4"));
-//    video->setGeometry(100,100,300,400);
-//    video->show();
-//    player->play();
+public slots:
+    void setState(QMediaPlayer::State state);
+    void setVolume(int volume);
+    void setMuted(bool muted);
+    void setPlaybackRate(float rate);
 
+signals:
+    void play();
+    void pause();
+    void stop();
+    void next();
+    void previous();
+    void changeVolume(int volume);
+    void changeMuting(bool muting);
+    void changeRate(qreal rate);
 
+private slots:
+    void playClicked();
+    void muteClicked();
+    void updateRate();
+    void onVolumeSliderValueChanged();
 
+private:
+    QMediaPlayer::State m_playerState = QMediaPlayer::StoppedState;
+    bool m_playerMuted = false;
+    QAbstractButton *m_playButton = nullptr;
+    QAbstractButton *m_stopButton = nullptr;
+    QAbstractButton *m_nextButton = nullptr;
+    QAbstractButton *m_previousButton = nullptr;
+    QAbstractButton *m_muteButton = nullptr;
+    QAbstractSlider *m_volumeSlider = nullptr;
+    QComboBox *m_rateBox = nullptr;
+};
 
-    MainWindow mainWin;
-    if (!parser.positionalArguments().isEmpty())
-        mainWin.loadFileText(parser.positionalArguments().first());
-    mainWin.show();
-    return app.exec();
-
-}
-//! [0]
+#endif // PLAYERCONTROLS_H

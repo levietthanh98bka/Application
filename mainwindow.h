@@ -60,6 +60,16 @@
 #include <codeeditor.h>
 #include <loghelper.h>
 #include <QStandardPaths>
+#include <QImageReader>
+#include <QMediaPlayer>
+#include <QVideoWidget>
+#include <QUrl>
+#include <playmedia.h>
+#include <QStatusBar>
+#include <QMenuBar>
+#include <QDockWidget>
+
+
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -78,6 +88,7 @@ public:
 
     void loadFileText(const QString &fileName);
     void loadImage(const QString &fileName);
+    void loadVideo(const QString &fileName);
     enum TYPE_FILE {
         IMAGE,
         MUSIC,
@@ -88,18 +99,51 @@ signals:
     void typeFileChanged();
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     void newFile();
     void open();
     bool save();
     bool saveAs();
-    void about();
+    void zoomIn();
+    void zoomOut();
+    void normalSize();
+    void fitToWindow();
     void documentWasModified();
+    void about();
 #ifndef QT_NO_SESSIONMANAGER
     void commitData(QSessionManager &);
 #endif
     void slotTypeFileChanged();
+
+    void showFull(){
+        LOG_INFO;
+        player->controls->hide();
+        player->m_fullScreenButton->hide();
+        statusBar()->hide();
+        menuBar()->hide();
+        player->m_slider->hide();
+        player->m_labelDuration->hide();
+
+        showFullScreen();
+//        player->m_videoWidget->showFullScreen();
+
+    }
+
+    void slotModeViewChanged(){
+        LOG_INFO;
+        player->controls->show();
+        player->m_fullScreenButton->show();
+        player->m_slider->show();
+        player->m_labelDuration->show();
+
+        statusBar()->show();
+        menuBar()->show();
+        showNormal();
+    }
+
+
 
 private:
     void createActions();
@@ -111,6 +155,10 @@ private:
     void setCurrentFile(const QString &fileName);
     QString strippedName(const QString &fullFileName);
     void getTypeFile(QString str);
+    void updateActions();
+    void scaleImage(double factor);
+    void adjustScrollBar(QScrollBar *scrollBar, double factor);
+
 
     TYPE_FILE m_typeFile;
 
@@ -121,6 +169,20 @@ private:
     QScrollArea* m_scrollArea;
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
+
+    QAction *zoomInAct;
+    QAction *zoomOutAct;
+    QAction *normalSizeAct;
+    QAction *fitToWindowAct;
+    QAction *saveAct;
+    QAction *saveAsAct;
+    QAction *pasteAct;
+    double scaleFactor;
+
+    PlayMedia *player;
+
+    // QWidget interface
+
 };
 //! [0]
 
