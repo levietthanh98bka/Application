@@ -6,13 +6,15 @@ HEADERS       = mainwindow.h \
     loghelper.h \
     playercontrols.h \
     playmedia.h \
-    videowidget.h
+    videowidget.h \
+    qslidercustom.h
 SOURCES       = main.cpp \
                 mainwindow.cpp \
     codeeditor.cpp \
     playercontrols.cpp \
     playmedia.cpp \
-    videowidget.cpp
+    videowidget.cpp \
+    qslidercustom.cpp
 #! [0]
 RESOURCES     = application.qrc
 #! [0]

@@ -56,6 +56,7 @@
 #include <QToolButton>
 #include <QComboBox>
 #include <QAudio>
+#include <loghelper.h>
 
 PlayerControls::PlayerControls(QWidget *parent)
     : QWidget(parent)
@@ -163,6 +164,7 @@ bool PlayerControls::isMuted() const
 
 void PlayerControls::setMuted(bool muted)
 {
+    LOG_INFO << muted;
     if (muted != m_playerMuted) {
         m_playerMuted = muted;
 
@@ -187,6 +189,7 @@ void PlayerControls::playClicked()
 
 void PlayerControls::muteClicked()
 {
+    LOG_INFO << !m_playerMuted;
     emit changeMuting(!m_playerMuted);
 }
 

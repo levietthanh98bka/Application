@@ -3,37 +3,58 @@
 PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
 {
     m_player = new QMediaPlayer;
-//    QPalette pal = QPalette();
+}
 
-    // set black background
-    // Qt::black / "#000000" / "black"
-//    pal.setColor(QPalette::Window, Qt::black);
+bool PlayMedia::isPlayerAvailable() const
+{
+    return m_player->isAvailable();
+}
 
-//    setAutoFillBackground(true);
-//    setPalette(pal);
-
-    connect(m_player, &QMediaPlayer::durationChanged, this, &PlayMedia::durationChanged);
-    connect(m_player, &QMediaPlayer::positionChanged, this, &PlayMedia::positionChanged);
-    connect(m_player, QOverload<>::of(&QMediaPlayer::metaDataChanged), this, &PlayMedia::metaDataChanged);
-//    connect(m_playlist, &QMediaPlaylist::currentIndexChanged, this, &Player::playlistPositionChanged);
-    connect(m_player, &QMediaPlayer::mediaStatusChanged, this, &PlayMedia::statusChanged);
-    connect(m_player, &QMediaPlayer::bufferStatusChanged, this, &PlayMedia::bufferingProgress);
-    connect(m_player, &QMediaPlayer::videoAvailableChanged, this, &PlayMedia::videoAvailableChanged);
-//    connect(m_player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayMedia::displayErrorMessage);
-    connect(m_player, &QMediaPlayer::stateChanged, this, &PlayMedia::stateChanged);
+void PlayMedia::initialVideo()
+{
+    //---------------------------------------------------------------------------------------------------
 
     m_videoWidget = new VideoWidget(this);
     m_player->setVideoOutput(m_videoWidget);
-
-    m_slider = new QSlider(Qt::Horizontal);
-
+    m_slider = new QSliderCustom(Qt::Horizontal);
     m_labelDuration = new QLabel();
-    connect(m_slider, &QSlider::sliderMoved, this, &PlayMedia::seek);
-
     controls = new PlayerControls;
-    controls->setState(m_player->state());
-    controls->setVolume(m_player->volume());
-    controls->setMuted(controls->isMuted());
+    m_fullScreenButton = new QPushButton(tr("FullScreen"));
+    m_fullScreenButton->setCheckable(true);
+    //---------------------------------------------------------------------------------------------------
+
+
+    connect(m_player, &QMediaPlayer::durationChanged, this, &PlayMedia::durationChanged);
+    connect(m_player, &QMediaPlayer::positionChanged, this, &PlayMedia::positionChanged);
+//    connect(m_player, QOverload<>::of(&QMediaPlayer::metaDataChanged), this, &PlayMedia::metaDataChanged);
+//    connect(m_playlist, &QMediaPlaylist::currentIndexChanged, this, &Player::playlistPositionChanged);
+    connect(m_player, &QMediaPlayer::mediaStatusChanged, this, &PlayMedia::statusChanged);
+//    connect(m_player, &QMediaPlayer::bufferStatusChanged, this, &PlayMedia::bufferingProgress);
+    connect(m_player, &QMediaPlayer::videoAvailableChanged, this, &PlayMedia::videoAvailableChanged);
+//    connect(m_player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayMedia::displayErrorMessage);
+    connect(m_player, &QMediaPlayer::stateChanged, this, &PlayMedia::stateChanged);
+    connect(m_player, &QMediaPlayer::mutedChanged, this, &PlayMedia::slotMuteChanged);
+
+    connect(m_player, &QMediaPlayer::stateChanged, controls, &PlayerControls::setState);
+    connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
+    connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
+    //---------------------------------------------------------------------------------------------------
+
+    connect(m_videoWidget,&VideoWidget::signalFullScreenVideo,this,&PlayMedia::slotForwardFullScreenMode);
+    connect(m_videoWidget,&VideoWidget::signalPause,controls, &PlayerControls::pause);
+    connect(m_videoWidget,&VideoWidget::signalPlay,controls, &PlayerControls::play);
+    connect(m_videoWidget, &VideoWidget::signalMute, controls, &PlayerControls::changeMuting);
+    connect(m_videoWidget,&VideoWidget::signalBackward,this,&PlayMedia::backward);
+    connect(m_videoWidget,&VideoWidget::signalForward,this,&PlayMedia::forward);
+    connect(m_videoWidget,&VideoWidget::signalVolumeUp,this,&PlayMedia::volumeUp);
+    connect(m_videoWidget,&VideoWidget::signalVolumeDown,this,&PlayMedia::volumeDown);
+    //---------------------------------------------------------------------------------------------------
+
+//    connect(m_slider,&QSlider::sliderReleased,m_slider,&QSlider::sliderMoved);
+//    m_slider->setTracking(false);
+    connect(m_slider, &QSliderCustom::pressedEv, this, &PlayMedia::seek);
+//    connect(m_slider, &QSlider::sliderMoved, this, &PlayMedia::seek);
+    //---------------------------------------------------------------------------------------------------
 
     connect(controls, &PlayerControls::play, m_player, &QMediaPlayer::play);
     connect(controls, &PlayerControls::pause, m_player, &QMediaPlayer::pause);
@@ -44,38 +65,40 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
     connect(controls, &PlayerControls::changeMuting, m_player, &QMediaPlayer::setMuted);
     connect(controls, &PlayerControls::changeRate, m_player, &QMediaPlayer::setPlaybackRate);
     connect(controls, &PlayerControls::stop, m_videoWidget, QOverload<>::of(&QVideoWidget::update));
+    //---------------------------------------------------------------------------------------------------
 
-    connect(m_player, &QMediaPlayer::stateChanged, controls, &PlayerControls::setState);
-    connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
-    connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
+    connect(m_fullScreenButton, &QPushButton::clicked, this, &PlayMedia::slotForwardFullScreenMode);
+    //--------------------------------- Layout view -----------------------------------------------------
 
-    m_fullScreenButton = new QPushButton(tr("FullScreen"));
-    m_fullScreenButton->setCheckable(true);
-
-    displayLayout = new QHBoxLayout;
+    QHBoxLayout *displayLayout = new QHBoxLayout;
     displayLayout->addWidget(m_videoWidget);
 //    QWidget *m_playlistView = new QWidget;
 //    displayLayout->addWidget(m_playlistView);
 
     QBoxLayout *controlLayout = new QHBoxLayout;
     controlLayout->setMargin(0);
-//    controlLayout->addWidget(openButton);
     controlLayout->addStretch(1);
     controlLayout->addWidget(controls);
     controlLayout->addStretch(1);
     controlLayout->addWidget(m_fullScreenButton);
 
-
-    layout = new QVBoxLayout;
-    layout->addLayout(displayLayout);
     QHBoxLayout *hLayout = new QHBoxLayout;
     hLayout->addWidget(m_slider);
     hLayout->addWidget(m_labelDuration);
+
+    QBoxLayout *layout = new QVBoxLayout;
+    layout->addLayout(displayLayout);
     layout->addLayout(hLayout);
     layout->addLayout(controlLayout);
 
-    setLayout(layout);
     layout->setMargin(0);
+
+    setLayout(layout);
+    //-------------------------------- End define layout view ------------------------------------------//
+    //-------------------------------- Default state ---------------------------------------------------//
+    controls->setState(m_player->state());
+    controls->setVolume(m_player->volume());
+    controls->setMuted(controls->isMuted());
 
     if (!isPlayerAvailable()) {
         QMessageBox::warning(this, tr("Service not available"),
@@ -84,29 +107,109 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
 
         controls->setEnabled(false);
 //        m_playlistView->setEnabled(false);
-
 //        m_fullScreenButton->setEnabled(false);
     }
-//    connect(m_videoWidget,&VideoWidget::modeViewChanged, this, &PlayMedia::slotModeViewChanged);
-
-    metaDataChanged();
-
-
+    //    metaDataChanged();
 }
 
-bool PlayMedia::isPlayerAvailable() const
+void PlayMedia::initialAudio()
 {
-    return m_player->isAvailable();
+    //---------------------------------------------------------------------------------------------------
+    m_slider = new QSliderCustom(Qt::Horizontal);
+    m_labelDuration = new QLabel();
+    controls = new PlayerControls;
+    m_fullScreenButton = new QPushButton(tr("FullScreen"));
+    m_fullScreenButton->setCheckable(true);
+    //---------------------------------------------------------------------------------------------------
+
+    connect(m_player, &QMediaPlayer::durationChanged, this, &PlayMedia::durationChanged);
+    connect(m_player, &QMediaPlayer::positionChanged, this, &PlayMedia::positionChanged);
+//    connect(m_player, QOverload<>::of(&QMediaPlayer::metaDataChanged), this, &PlayMedia::metaDataChanged);
+//    connect(m_playlist, &QMediaPlaylist::currentIndexChanged, this, &Player::playlistPositionChanged);
+    connect(m_player, &QMediaPlayer::mediaStatusChanged, this, &PlayMedia::statusChanged);
+//    connect(m_player, &QMediaPlayer::bufferStatusChanged, this, &PlayMedia::bufferingProgress);
+//    connect(m_player, &QMediaPlayer::videoAvailableChanged, this, &PlayMedia::videoAvailableChanged);
+//    connect(m_player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayMedia::displayErrorMessage);
+//    connect(m_player, &QMediaPlayer::stateChanged, this, &PlayMedia::stateChanged);
+    connect(m_player, &QMediaPlayer::mutedChanged, this, &PlayMedia::slotMuteChanged);
+
+    connect(m_player, &QMediaPlayer::stateChanged, controls, &PlayerControls::setState);
+    connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
+    connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
+    //---------------------------------------------------------------------------------------------------
+
+//    connect(m_slider,&QSlider::sliderReleased,m_slider,&QSlider::sliderMoved);
+//    m_slider->setTracking(false);
+    connect(m_slider, &QSliderCustom::pressedEv, this, &PlayMedia::seek);
+//    connect(m_slider, &QSlider::sliderMoved, this, &PlayMedia::seek);
+    //---------------------------------------------------------------------------------------------------
+
+    connect(controls, &PlayerControls::play, m_player, &QMediaPlayer::play);
+    connect(controls, &PlayerControls::pause, m_player, &QMediaPlayer::pause);
+    connect(controls, &PlayerControls::stop, m_player, &QMediaPlayer::stop);
+//    connect(controls, &PlayerControls::next, m_playlist, &QMediaPlaylist::next);
+//    connect(controls, &PlayerControls::previous, this, &QMediaPlayer::previousClicked);
+    connect(controls, &PlayerControls::changeVolume, m_player, &QMediaPlayer::setVolume);
+    connect(controls, &PlayerControls::changeMuting, m_player, &QMediaPlayer::setMuted);
+    connect(controls, &PlayerControls::changeRate, m_player, &QMediaPlayer::setPlaybackRate);
+    //---------------------------------------------------------------------------------------------------
+
+    connect(m_fullScreenButton, &QPushButton::clicked, this, &PlayMedia::slotForwardFullScreenMode);
+    //--------------------------------- Layout view -----------------------------------------------------
+
+    QHBoxLayout *displayLayout = new QHBoxLayout;
+    QWidget *audioWidget = new QWidget;
+    displayLayout->addWidget(audioWidget);
+//    QWidget *m_playlistView = new QWidget;
+//    displayLayout->addWidget(m_playlistView);
+
+    QBoxLayout *controlLayout = new QHBoxLayout;
+    controlLayout->setMargin(0);
+    controlLayout->addStretch(1);
+    controlLayout->addWidget(controls);
+    controlLayout->addStretch(1);
+    controlLayout->addWidget(m_fullScreenButton);
+
+    QHBoxLayout *hLayout = new QHBoxLayout;
+    hLayout->addWidget(m_slider);
+    hLayout->addWidget(m_labelDuration);
+
+    QBoxLayout *layout = new QVBoxLayout;
+    layout->addLayout(displayLayout);
+    layout->addLayout(hLayout);
+    layout->addLayout(controlLayout);
+
+    layout->setMargin(0);
+
+    setLayout(layout);
+    //-------------------------------- End define layout view ------------------------------------------//
+    //-------------------------------- Default state ---------------------------------------------------//
+    controls->setState(m_player->state());
+    controls->setVolume(m_player->volume());
+    controls->setMuted(controls->isMuted());
+
+    if (!isPlayerAvailable()) {
+        QMessageBox::warning(this, tr("Service not available"),
+                             tr("The QMediaPlayer object does not have a valid service.\n"\
+                                "Please check the media service plugins are installed."));
+
+        controls->setEnabled(false);
+//        m_playlistView->setEnabled(false);
+//        m_fullScreenButton->setEnabled(false);
+    }
+    //    metaDataChanged();
 }
 
 void PlayMedia::durationChanged(qint64 duration)
 {
+    LOG_INFO << duration;
     m_duration = duration / 1000;
     m_slider->setMaximum(m_duration);
 }
 
 void PlayMedia::positionChanged(qint64 progress)
 {
+//    LOG_INFO << progress;
     if (!m_slider->isSliderDown())
         m_slider->setValue(progress / 1000);
 
@@ -146,6 +249,7 @@ void PlayMedia::seek(int seconds)
 
 }
 
+
 void PlayMedia::jump(const QModelIndex &index)
 {
     if (index.isValid()) {
@@ -159,14 +263,55 @@ void PlayMedia::playlistPositionChanged(int)
 
 }
 
+void PlayMedia::backward()
+{
+    LOG_INFO;
+    if(m_player->position() >= 5000){
+        m_player->setPosition(m_player->position() - 5000);
+    }
+}
+
+void PlayMedia::forward()
+{
+    LOG_INFO;
+    if(m_player->position() < m_duration*1000){
+        m_player->setPosition(m_player->position() + 5000);
+    }
+}
+
+void PlayMedia::volumeUp()
+{
+    LOG_INFO << "start " << m_player->volume();
+    m_player->setVolume(m_player->volume() + 5);
+    LOG_INFO << "end " << m_player->volume();
+}
+
+void PlayMedia::volumeDown()
+{
+    LOG_INFO << "start " << m_player->volume();
+    m_player->setVolume(m_player->volume() - 5);
+    LOG_INFO << "end " << m_player->volume();
+}
+
 void PlayMedia::statusChanged(QMediaPlayer::MediaStatus status)
 {
-
+    Q_UNUSED(status);
 }
 
 void PlayMedia::stateChanged(QMediaPlayer::State state)
 {
+    if(state == QMediaPlayer::PlayingState){
+        m_videoWidget->setPlayOrPause(true);
+    }else{
+        m_videoWidget->setPlayOrPause(false);
+    }
+}
 
+void PlayMedia::slotMuteChanged(bool mute)
+{
+    LOG_INFO << mute;
+    if(mute != m_videoWidget->mute())
+        m_videoWidget->setMute(mute);
 }
 
 void PlayMedia::bufferingProgress(int progress)
@@ -211,5 +356,10 @@ void PlayMedia::updateDurationInfo(qint64 currentInfo)
         tStr = currentTime.toString(format) + " / " + totalTime.toString(format);
     }
     m_labelDuration->setText(tStr);
+}
+
+void PlayMedia::slotForwardFullScreenMode(){
+    m_videoWidget->setFullScreenMode(!m_videoWidget->fullScreenMode());
+    signalFullScreenMode(m_videoWidget->fullScreenMode());
 }
 

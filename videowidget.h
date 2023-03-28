@@ -59,13 +59,34 @@ class VideoWidget : public QVideoWidget
 
 public:
     explicit VideoWidget(QWidget *parent = nullptr);
+    bool fullScreenMode() const;
+    void setFullScreenMode(bool fullScreenMode);
+
+    bool playOrPause() const;
+    void setPlayOrPause(bool playOrPause);
+
+    bool mute() const;
+    void setMute(bool mute);
+
 signals:
-    void modeViewChanged();
+    void signalFullScreenVideo();
+    void signalPause();
+    void signalPlay();
+    void signalMute(bool muted);
+    void signalForward();
+    void signalBackward();
+    void signalVolumeUp();
+    void signalVolumeDown();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+
+private:
+    bool m_fullScreenMode = false;
+    bool m_playOrPause = false; // pause default
+    bool m_mute = false;
 };
 
 #endif // VIDEOWIDGET_H

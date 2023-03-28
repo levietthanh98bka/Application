@@ -52,43 +52,101 @@
 
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <loghelper.h>
 
 VideoWidget::VideoWidget(QWidget *parent)
     : QVideoWidget(parent)
 {
 //    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-
-//    QPalette p = palette();
-//    p.setColor(QPalette::Window, Qt::black);
-//    setPalette(p);
-
-//    setAttribute(Qt::WA_OpaquePaintEvent);
+    QPalette p = palette();
+    p.setColor(QPalette::Window, Qt::black);
+    setPalette(p);
+    setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 void VideoWidget::keyPressEvent(QKeyEvent *event)
 {
-//    if (event->key() == Qt::Key_Escape && isFullScreen()) {
-//        setFullScreen(false);
-//        event->accept();
-//    } else if (event->key() == Qt::Key_Enter && event->modifiers() & Qt::Key_Alt) {
-//        setFullScreen(!isFullScreen());
-//        event->accept();
-//    } else {
-//        QVideoWidget::keyPressEvent(event);
-//    }
+    if (event->key() == Qt::Key_Escape && m_fullScreenMode) {
+        LOG_INFO << "Key_Escape";
+        emit signalFullScreenVideo();
+    }else if (event->key() == Qt::Key_F){
+        emit signalFullScreenVideo();
+        LOG_INFO << "Key_F";
+    }
+    else if (event->key() == Qt::Key_Space) {
+        LOG_INFO << "Key_Space";
+        if(m_playOrPause){
+            LOG_INFO << "emit play";
+            emit signalPause();
+        }else{
+            LOG_INFO << "emit pause";
+            emit signalPlay();
+        }
+        event->accept();
+    }else if(event->key() == Qt::Key_M){
+        LOG_INFO << "Key M " << !m_mute;
+        m_mute = !m_mute;
+        emit signalMute(m_mute);
+    } else if(event->key() == Qt::Key_Left){
+        LOG_INFO << "Key Left ";
+        emit signalBackward();
+    } else if(event->key() == Qt::Key_Right){
+        LOG_INFO << "Key Right ";
+        emit signalForward();
+    } else if(event->key() == Qt::Key_Up){
+        LOG_INFO << "Key Up ";
+        emit signalVolumeUp();
+    } else if(event->key() == Qt::Key_Down){
+        LOG_INFO << "Key Down ";
+        emit signalVolumeDown();
+    }
+    else {
+        QVideoWidget::keyPressEvent(event);
+    }
+
+    event->accept();
 }
 
 void VideoWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
-//    showNormal();
-//    setFullScreen(!isFullScreen());
-//    event->accept();
-    emit modeViewChanged();
+    Q_UNUSED(event)
+    emit signalFullScreenVideo();
+    event->accept();
+}
 
+bool VideoWidget::fullScreenMode() const
+{
+    return m_fullScreenMode;
+}
+
+void VideoWidget::setFullScreenMode(bool fullScreenMode)
+{
+    m_fullScreenMode = fullScreenMode;
+    LOG_INFO << m_fullScreenMode;
 }
 
 void VideoWidget::mousePressEvent(QMouseEvent *event)
 {
-//    QVideoWidget::mousePressEvent(event);
+    QVideoWidget::mousePressEvent(event);
+}
+
+bool VideoWidget::mute() const
+{
+    return m_mute;
+}
+
+void VideoWidget::setMute(bool mute)
+{
+    m_mute = mute;
+}
+
+void VideoWidget::setPlayOrPause(bool playOrPause)
+{
+    m_playOrPause = playOrPause;
+}
+
+bool VideoWidget::playOrPause() const
+{
+    return m_playOrPause;
 }
 

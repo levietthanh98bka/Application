@@ -89,10 +89,12 @@ public:
     void loadFileText(const QString &fileName);
     void loadImage(const QString &fileName);
     void loadVideo(const QString &fileName);
+    void loadAudio(const QString &fileName);
     enum TYPE_FILE {
         IMAGE,
         MUSIC,
         VIDEO,
+        MP3,
         TEXT
     };
 signals:
@@ -100,6 +102,7 @@ signals:
 protected:
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
 
 private slots:
     void newFile();
@@ -117,30 +120,20 @@ private slots:
 #endif
     void slotTypeFileChanged();
 
-    void showFull(){
-        LOG_INFO;
-        player->controls->hide();
-        player->m_fullScreenButton->hide();
-        statusBar()->hide();
-        menuBar()->hide();
-        player->m_slider->hide();
-        player->m_labelDuration->hide();
-
-        showFullScreen();
-//        player->m_videoWidget->showFullScreen();
-
-    }
-
-    void slotModeViewChanged(){
-        LOG_INFO;
-        player->controls->show();
-        player->m_fullScreenButton->show();
-        player->m_slider->show();
-        player->m_labelDuration->show();
-
-        statusBar()->show();
-        menuBar()->show();
-        showNormal();
+    void slotFullScreenMode(bool modeView){
+        //modeView == true -> fullScreenMode
+        LOG_INFO << "mode view: " << modeView;
+        if(modeView){
+            player->showFull();
+            statusBar()->hide();
+            menuBar()->hide();
+            showFullScreen();
+        }else{
+            player->myShowNormal();
+            statusBar()->show();
+            menuBar()->show();
+            showNormal();
+        }
     }
 
 

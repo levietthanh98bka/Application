@@ -82,7 +82,6 @@ int main(int argc, char *argv[])
 
 
 
-
     MainWindow mainWin;
     if (!parser.positionalArguments().isEmpty())
         mainWin.loadFileText(parser.positionalArguments().first());

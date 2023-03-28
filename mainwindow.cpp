@@ -86,8 +86,7 @@ MainWindow::MainWindow()
     setCurrentFile(QString());
 //    setUnifiedTitleAndToolBarOnMac(true);
 
-    connect(player->m_videoWidget,&VideoWidget::modeViewChanged, this, &MainWindow::slotModeViewChanged);
-    connect(player->m_fullScreenButton, &QPushButton::clicked, this, &MainWindow::showFull);
+    connect(player,&PlayMedia::signalFullScreenMode, this, &MainWindow::slotFullScreenMode);
 }
 //! [2]
 
@@ -108,6 +107,14 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     if(m_typeFile == IMAGE)
          LOG_INFO << m_label->size() << m_scrollArea->size() << m_image.size();
     QWidget::resizeEvent(event);
+
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *event)
+{
+    LOG_INFO;
+    Q_UNUSED(event);
+    player->setFocusToVideo();
 
 }
 //! [4]
@@ -147,7 +154,7 @@ void MainWindow::open()
                 m_typeFile = IMAGE;
                 break;
             case 3:
-                m_typeFile = IMAGE;
+                m_typeFile = MP3;
                 break;
             case 4:
                 m_typeFile = VIDEO;
@@ -172,6 +179,11 @@ void MainWindow::open()
         if (!fileName.isEmpty() && m_typeFile == VIDEO){
             LOG_INFO << "load video";
             loadVideo(fileName);
+            return;
+        }
+        if (!fileName.isEmpty() && m_typeFile == MP3){
+            LOG_INFO << "load audio";
+            loadAudio(fileName);
             return;
         }
     }
@@ -513,6 +525,14 @@ void MainWindow::loadVideo(const QString &fileName)
     LOG_INFO << "fileName";
      setCentralWidget(player);
 
+}
+
+void MainWindow::loadAudio(const QString &fileName)
+{
+    LOG_INFO << fileName;
+    player->setAudio(fileName);
+    LOG_INFO << "fileName";
+     setCentralWidget(player);
 }
 //! [43]
 
