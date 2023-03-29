@@ -5,7 +5,7 @@ QSliderCustom::QSliderCustom(QSlider *parent) : QSlider(parent)
 
 }
 
-QSliderCustom::QSliderCustom(Qt::Orientation orientation, QWidget *parent)
+QSliderCustom::QSliderCustom(Qt::Orientation orientation, QWidget *parent) : QSlider(parent)
 {
     setOrientation(orientation);
 }

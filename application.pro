@@ -2,19 +2,19 @@ QT += widgets multimedia multimediawidgets
 requires(qtConfig(filedialog))
 
 HEADERS       = mainwindow.h \
-    codeeditor.h \
-    loghelper.h \
-    playercontrols.h \
-    playmedia.h \
-    videowidget.h \
-    qslidercustom.h
+    common/loghelper.h \
+    TextModel/codeeditor.h \
+    MediaModel/playercontrols.h \
+    MediaModel/playmedia.h \
+    MediaModel/qslidercustom.h \
+    MediaModel/videowidget.h
 SOURCES       = main.cpp \
                 mainwindow.cpp \
-    codeeditor.cpp \
-    playercontrols.cpp \
-    playmedia.cpp \
-    videowidget.cpp \
-    qslidercustom.cpp
+    TextModel/codeeditor.cpp \
+    MediaModel/playercontrols.cpp \
+    MediaModel/playmedia.cpp \
+    MediaModel/qslidercustom.cpp \
+    MediaModel/videowidget.cpp
 #! [0]
 RESOURCES     = application.qrc
 #! [0]

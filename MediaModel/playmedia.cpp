@@ -13,7 +13,6 @@ bool PlayMedia::isPlayerAvailable() const
 void PlayMedia::initialVideo()
 {
     //---------------------------------------------------------------------------------------------------
-
     m_videoWidget = new VideoWidget(this);
     m_player->setVideoOutput(m_videoWidget);
     m_slider = new QSliderCustom(Qt::Horizontal);

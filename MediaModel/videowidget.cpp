@@ -52,12 +52,12 @@
 
 #include <QKeyEvent>
 #include <QMouseEvent>
-#include <loghelper.h>
+#include <common/loghelper.h>
 
 VideoWidget::VideoWidget(QWidget *parent)
     : QVideoWidget(parent)
 {
-//    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     QPalette p = palette();
     p.setColor(QPalette::Window, Qt::black);
     setPalette(p);

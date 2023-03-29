@@ -56,7 +56,7 @@
 #include <QToolButton>
 #include <QComboBox>
 #include <QAudio>
-#include <loghelper.h>
+#include <common/loghelper.h>
 
 PlayerControls::PlayerControls(QWidget *parent)
     : QWidget(parent)

@@ -57,14 +57,14 @@
 #include <QLabel>
 #include <QDebug>
 #include <QRegExp>
-#include <codeeditor.h>
-#include <loghelper.h>
+#include <TextModel/codeeditor.h>
+#include <common/loghelper.h>
 #include <QStandardPaths>
 #include <QImageReader>
 #include <QMediaPlayer>
 #include <QVideoWidget>
 #include <QUrl>
-#include <playmedia.h>
+#include <MediaModel/playmedia.h>
 #include <QStatusBar>
 #include <QMenuBar>
 #include <QDockWidget>
@@ -124,12 +124,12 @@ private slots:
         //modeView == true -> fullScreenMode
         LOG_INFO << "mode view: " << modeView;
         if(modeView){
-            player->showFull();
+            player->showFullMode();
             statusBar()->hide();
             menuBar()->hide();
             showFullScreen();
         }else{
-            player->myShowNormal();
+            player->showNormalMode();
             statusBar()->show();
             menuBar()->show();
             showNormal();

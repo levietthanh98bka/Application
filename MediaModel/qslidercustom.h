@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QSlider>
 #include <QMouseEvent>
-#include <loghelper.h>
+#include <common/loghelper.h>
 
 class QSliderCustom : public QSlider
 {

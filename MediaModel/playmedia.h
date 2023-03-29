@@ -8,14 +8,14 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
-#include <playercontrols.h>
+#include <MediaModel/playercontrols.h>
 #include <QHBoxLayout>
 #include <QTime>
 #include <QModelIndex>
 #include <QUrl>
-#include <loghelper.h>
-#include <videowidget.h>
-#include <qslidercustom.h>
+#include <common/loghelper.h>
+#include <MediaModel/videowidget.h>
+#include <MediaModel/qslidercustom.h>
 
 
 class PlayMedia : public QWidget
@@ -46,13 +46,13 @@ public:
         m_videoWidget->setFocus();
         m_player->play();
     }
-    void showFull(){
+    void showFullMode(){
         controls->hide();
         m_fullScreenButton->hide();
         m_slider->hide();
         m_labelDuration->hide();
     }
-    void myShowNormal(){
+    void showNormalMode(){
         controls->show();
         m_fullScreenButton->show();
         m_slider->show();
