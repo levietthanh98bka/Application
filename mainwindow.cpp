@@ -62,7 +62,7 @@ MainWindow::MainWindow()
     , fileToolBar(new QToolBar)
     , editToolBar(new QToolBar)
     , scaleFactor(1)
-    , player(new PlayMedia(this))
+    , player(new PlayMedia)
 //! [1] //! [2]
 {
     m_label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
@@ -86,7 +86,8 @@ MainWindow::MainWindow()
     setCurrentFile(QString());
 //    setUnifiedTitleAndToolBarOnMac(true);
 
-    connect(player,&PlayMedia::signalFullScreenMode, this, &MainWindow::slotFullScreenMode);
+    connect(player,&PlayMedia::showFullScreen, this, &MainWindow::slotFullScreenMode);
+    resize(QGuiApplication::primaryScreen()->availableSize() * 3 / 5);
 }
 //! [2]
 
@@ -114,8 +115,9 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 {
     LOG_INFO;
     Q_UNUSED(event);
-    player->setFocusToVideo();
-
+    if(m_typeFile == VIDEO){
+        player->setFocusToVideo();
+    }
 }
 //! [4]
 
@@ -530,7 +532,7 @@ void MainWindow::loadVideo(const QString &fileName)
 void MainWindow::loadAudio(const QString &fileName)
 {
     LOG_INFO << fileName;
-    player->setAudio(fileName);
+//    player->setAudio(fileName);
     LOG_INFO << "fileName";
      setCentralWidget(player);
 }

@@ -4,17 +4,13 @@ requires(qtConfig(filedialog))
 HEADERS       = mainwindow.h \
     common/loghelper.h \
     TextModel/codeeditor.h \
-    MediaModel/playercontrols.h \
-    MediaModel/playmedia.h \
-    MediaModel/qslidercustom.h \
-    MediaModel/videowidget.h
+    common/qslidercustom.h \
+    MediaModel/playmedia.h
 SOURCES       = main.cpp \
                 mainwindow.cpp \
     TextModel/codeeditor.cpp \
-    MediaModel/playercontrols.cpp \
-    MediaModel/playmedia.cpp \
-    MediaModel/qslidercustom.cpp \
-    MediaModel/videowidget.cpp
+    common/qslidercustom.cpp \
+    MediaModel/playmedia.cpp
 #! [0]
 RESOURCES     = application.qrc
 #! [0]

@@ -124,12 +124,12 @@ private slots:
         //modeView == true -> fullScreenMode
         LOG_INFO << "mode view: " << modeView;
         if(modeView){
-            player->showFullMode();
+            player->reqFullMode();
             statusBar()->hide();
             menuBar()->hide();
             showFullScreen();
         }else{
-            player->showNormalMode();
+            player->reqNormalMode();
             statusBar()->show();
             menuBar()->show();
             showNormal();
