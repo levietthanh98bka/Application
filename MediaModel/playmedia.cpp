@@ -8,6 +8,7 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
     m_video = new QVideoWidget;
     m_slider = new QSliderCustom(Qt::Horizontal);
     m_labelDuration = new QLabel;
+    m_repeatCB = new QCheckBox("Repeat");
     m_fullScreenButton = new QPushButton("FullScreen");
 
 
@@ -64,6 +65,7 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
     controlLayout->addWidget(m_volumeSlider);
     controlLayout->addWidget(m_rateBox);
     controlLayout->addStretch(1);
+    controlLayout->addWidget(m_repeatCB);
     controlLayout->addWidget(m_fullScreenButton);
 
     QHBoxLayout *hLayout = new QHBoxLayout;
@@ -97,6 +99,7 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
     connect(m_player, &QMediaPlayer::positionChanged, this, &PlayMedia::positionChanged);
 
     connect(m_fullScreenButton, &QPushButton::clicked, this, &PlayMedia::fullScreenBtnClick);
+    connect(m_repeatCB, &QCheckBox::stateChanged, this, &PlayMedia::repeateChanged);
 
     setPlayerState(m_player->state());
     setVolume(m_player->volume());
@@ -197,6 +200,9 @@ void PlayMedia::setPlayerState(const QMediaPlayer::State &playerState)
             m_playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
             break;
         }
+        if(m_isRepeat && playerState == QMediaPlayer::StoppedState){
+            m_player->play();
+        }
     }
 }
 
@@ -243,6 +249,77 @@ void PlayMedia::updateDurationInfo(qint64 currentInfo)
         tStr = currentTime.toString(format) + " / " + totalTime.toString(format);
     }
     m_labelDuration->setText(tStr);
+}
+
+void PlayMedia::fullScreenBtnClick(){
+    LOG_INFO << m_isFullMode;
+    m_isFullMode = !m_isFullMode;
+    emit showFullScreen(m_isFullMode);
+}
+
+void PlayMedia::repeateChanged(bool state){
+    m_isRepeat = state;
+    LOG_INFO << m_isRepeat;
+}
+
+void PlayMedia::setFocusToVideo(){
+    setFocus();
+}
+
+void PlayMedia::reqFullMode(){
+    m_slider->hide();
+    m_labelDuration->hide();
+    m_fullScreenButton->hide();
+    m_repeatCB->hide();
+    m_playButton->hide();
+    m_stopButton->hide();
+    m_nextButton->hide();
+    m_previousButton->hide();
+    m_muteButton->hide();
+    m_volumeSlider->hide();
+    m_rateBox->hide();
+}
+
+void PlayMedia::reqNormalMode(){
+    m_slider->show();
+    m_labelDuration->show();
+    m_fullScreenButton->show();
+    m_repeatCB->show();
+    m_playButton->show();
+    m_stopButton->show();
+    m_nextButton->show();
+    m_previousButton->show();
+    m_muteButton->show();
+    m_volumeSlider->show();
+    m_rateBox->show();
+}
+
+void PlayMedia::reqBackward(){
+    if(m_player->position() >= 5000){
+        m_player->setPosition(m_player->position() - 5000);
+    }
+}
+
+void PlayMedia::reqForward(){
+    if(m_player->position() < m_duration*1000){
+        m_player->setPosition(m_player->position() + 5000);
+    }
+}
+
+void PlayMedia::reqVolumeUp(){
+    if(m_player->volume() <= 95)
+        m_player->setVolume(m_player->volume() + 5);
+    else {
+        m_player->setVolume(100);
+    }
+}
+
+void PlayMedia::reqVolumeDown(){
+    if(m_player->volume() >= 5)
+        m_player->setVolume(m_player->volume() - 5);
+    else {
+        m_player->setVolume(0);
+    }
 }
 
 void PlayMedia::keyPressEvent(QKeyEvent *event)

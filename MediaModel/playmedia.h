@@ -10,6 +10,7 @@
 #include <QComboBox>
 #include <QUrl>
 #include <QTime>
+#include <QCheckBox>
 #include <common/loghelper.h>
 
 class PlayMedia : public QWidget
@@ -60,69 +61,17 @@ public slots:
 
     void updateDurationInfo(qint64 currentInfo);
 
-    void fullScreenBtnClick(){
-        LOG_INFO << m_isFullMode;
-        m_isFullMode = !m_isFullMode;
-        emit showFullScreen(m_isFullMode);
-    }
+    void fullScreenBtnClick();
+    void repeateChanged(bool state);
 
-    void setFocusToVideo(){
-        setFocus();
-    }
+    void setFocusToVideo();
 
-    void reqFullMode(){
-        m_slider->hide();
-        m_labelDuration->hide();
-        m_fullScreenButton->hide();
-        m_playButton->hide();
-        m_stopButton->hide();
-        m_nextButton->hide();
-        m_previousButton->hide();
-        m_muteButton->hide();
-        m_volumeSlider->hide();
-        m_rateBox->hide();
-    }
-
-    void reqNormalMode(){
-        m_slider->show();
-        m_labelDuration->show();
-        m_fullScreenButton->show();
-        m_playButton->show();
-        m_stopButton->show();
-        m_nextButton->show();
-        m_previousButton->show();
-        m_muteButton->show();
-        m_volumeSlider->show();
-        m_rateBox->show();
-    }
-
-    void reqBackward(){
-        if(m_player->position() >= 5000){
-            m_player->setPosition(m_player->position() - 5000);
-        }
-    }
-
-    void reqForward(){
-        if(m_player->position() < m_duration*1000){
-            m_player->setPosition(m_player->position() + 5000);
-        }
-    }
-
-    void reqVolumeUp(){
-        if(m_player->volume() <= 95)
-         m_player->setVolume(m_player->volume() + 5);
-        else {
-            m_player->setVolume(100);
-        }
-    }
-
-    void reqVolumeDown(){
-        if(m_player->volume() >= 5)
-         m_player->setVolume(m_player->volume() - 5);
-        else {
-            m_player->setVolume(0);
-        }
-    }
+    void reqFullMode();
+    void reqNormalMode();
+    void reqBackward();
+    void reqForward();
+    void reqVolumeUp();
+    void reqVolumeDown();
 
 signals:
     void showFullScreen(bool isFull);
@@ -138,6 +87,7 @@ private:
     QSliderCustom *m_slider = nullptr;
     QLabel *m_labelDuration = nullptr;
     qint64 m_duration;
+    QCheckBox *m_repeatCB = nullptr;
     QPushButton *m_fullScreenButton = nullptr;
 
     // control layout
@@ -151,10 +101,8 @@ private:
     QAbstractSlider *m_volumeSlider = nullptr;
     QComboBox *m_rateBox = nullptr;
 
-
-
     bool m_isFullMode = false;
-
+    bool m_isRepeat = false;
 };
 
 #endif // PLAYMEDIA_H
