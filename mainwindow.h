@@ -136,11 +136,21 @@ private slots:
         }
     }
 
+    void dockWidgetChanged(int data){
+        LOG_INFO << data;
+        if(data > 1){
+            dock->setVisible(true);
+        }else {
+            dock->setVisible(false);
+        }
+    }
+
 
 
 private:
     void createActions();
     void createStatusBar();
+    void createDockWindows();
     void readSettings();
     void writeSettings();
     bool maybeSave();
@@ -173,6 +183,8 @@ private:
     double scaleFactor;
 
     PlayMedia *player;
+
+    QDockWidget *dock = nullptr;
 
     // QWidget interface
 

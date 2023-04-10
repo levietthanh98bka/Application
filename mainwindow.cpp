@@ -87,6 +87,7 @@ MainWindow::MainWindow()
 //    setUnifiedTitleAndToolBarOnMac(true);
 
     connect(player,&PlayMedia::showFullScreen, this, &MainWindow::slotFullScreenMode);
+    connect(player,&PlayMedia::listMediaChanged,this,&MainWindow::dockWidgetChanged,Qt::QueuedConnection);
     resize(QGuiApplication::primaryScreen()->availableSize() * 3 / 5);
 }
 //! [2]
@@ -401,7 +402,21 @@ void MainWindow::createStatusBar()
 
 }
 //! [33]
+void MainWindow::createDockWindows(){
+    if(dock == nullptr)
+        dock = new QDockWidget(tr("Customers"), this);
+    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+//    customerList->addItems(QStringList()
+//            << "John Doe, Harmony Enterprises, 12 Lakeside, Ambleton"
+//            << "Jane Doe, Memorabilia, 23 Watersedge, Beaton"
+//            << "Tammy Shea, Tiblanka, 38 Sea Views, Carlton"
+//            << "Tim Sheen, Caraba Gifts, 48 Ocean Way, Deal"
+//            << "Sol Harvey, Chicos Coffee, 53 New Springs, Eccleston"
+//            << "Sally Hobart, Tiroli Tea, 67 Long River, Fedula");
 
+    dock->setWidget(player->m_listView);
+    addDockWidget(Qt::RightDockWidgetArea, dock);
+}
 //! [34] //! [35]
 void MainWindow::readSettings()
 //! [34] //! [36]
@@ -524,6 +539,7 @@ void MainWindow::loadVideo(const QString &fileName)
 {
     LOG_INFO << fileName;
     player->setVideo(fileName);
+    createDockWindows();
     LOG_INFO << "fileName";
      setCentralWidget(player);
 

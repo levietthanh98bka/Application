@@ -11,8 +11,14 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
     m_repeatCB = new QCheckBox("Repeat");
     m_fullScreenButton = new QPushButton("FullScreen");
 
+    m_video->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    m_lmd.setStringList(m_listMedia);
+    m_listView = new QListView;
+    m_listView->setModel(&m_lmd);
 
-    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+
+
+//    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 
     // init for control layout//
     m_playButton = new QToolButton;
@@ -74,6 +80,7 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
 
     QBoxLayout *displayLayout = new QHBoxLayout;
     displayLayout->addWidget(m_video,0);
+//    displayLayout->addWidget(m_listView,0);
 
 
     QBoxLayout *layout = new QVBoxLayout;
@@ -103,6 +110,11 @@ PlayMedia::PlayMedia(QWidget *parent) : QWidget(parent)
 
     setPlayerState(m_player->state());
     setVolume(m_player->volume());
+
+
+    connect(m_listView,&QListView::clicked,this,&PlayMedia::slotClickListView);
+
+
 }
 
 int PlayMedia::volume() const
@@ -324,6 +336,7 @@ void PlayMedia::reqVolumeDown(){
 
 void PlayMedia::keyPressEvent(QKeyEvent *event)
 {
+
     if (event->key() == Qt::Key_Escape && m_isFullMode) {
         LOG_INFO << "Key_Escape";
         m_isFullMode = false;
@@ -336,6 +349,7 @@ void PlayMedia::keyPressEvent(QKeyEvent *event)
         LOG_INFO << "Key_Space";
         playClicked();
     }else if(event->key() == Qt::Key_M){
+        LOG_INFO << m_listView->size() << m_listView->isVisible();
         LOG_INFO << "Key M ";
         muteClicked();
     } else if(event->key() == Qt::Key_Left){

@@ -11,6 +11,11 @@
 #include <QUrl>
 #include <QTime>
 #include <QCheckBox>
+#include <QListView>
+#include <QStringListModel>
+#include <QStringList>
+#include <QFileInfo>
+#include <QModelIndex>
 #include <common/loghelper.h>
 
 class PlayMedia : public QWidget
@@ -20,11 +25,16 @@ private:
 public:
     PlayMedia(QWidget *parent = nullptr);
     void setVideo(QString filePath){
+        QFileInfo fi(filePath);
+        m_listMedia << fi.fileName() << fi.fileName();
+        m_mapListMedia[fi.fileName()] = filePath;
+        emit listMediaChanged(m_listMedia.length());
+        m_lmd.setStringList(m_listMedia);
         m_player->setVideoOutput(m_video);
         m_player->setMedia(QUrl::fromLocalFile(filePath));
         m_video->show();
         m_video->setFocus();
-        m_player->play();
+//        m_player->play();
     }
 
 signals:
@@ -34,6 +44,8 @@ signals:
     void changeVolume(int volume);
     void changeMuting(bool muting);
     void changeRate(qreal rate);
+
+    void listMediaChanged(int data);
 
 public slots:
     void playClicked();
@@ -73,6 +85,12 @@ public slots:
     void reqVolumeUp();
     void reqVolumeDown();
 
+    void slotClickListView(QModelIndex idx){
+        LOG_INFO << idx.data();
+        m_player->setMedia(QUrl::fromLocalFile(m_mapListMedia[idx.data().toString()]));
+        m_player->play();
+    }
+
 signals:
     void showFullScreen(bool isFull);
 
@@ -80,6 +98,9 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
 //    void mousePressEvent(QMouseEvent *event) override;
+
+public:
+    QListView *m_listView = nullptr;
 
 private:
     QMediaPlayer *m_player = nullptr;
@@ -103,6 +124,12 @@ private:
 
     bool m_isFullMode = false;
     bool m_isRepeat = false;
+
+
+    QStringListModel m_lmd;
+    QStringList m_listMedia;
+    QMap<QString,QString> m_mapListMedia;
+    QString m_currentFile;
 };
 
 #endif // PLAYMEDIA_H
